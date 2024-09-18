@@ -1,6 +1,5 @@
 import ShoppingListItem from "../components/ShoppingListItem";
-import { StyleSheet, View, TextInput,
-        } from "react-native";
+import { StyleSheet, TextInput, FlatList, View, Text } from "react-native";
 import { theme } from "../theme";
 import { useState } from "react";
 
@@ -9,15 +8,9 @@ type ShoppingListItemType = {
   name: string;
 };
 
-const initialList: ShoppingListItemType[] = [
-  { id: "1", name: "Coffee" },
-  { id: "2", name: "Tea" },
-  { id: "3", name: "Sugar" },
-]
-
 export default function App() {
   const [shoppingList, setShoppingList] = 
-    useState<ShoppingListItemType[]>(initialList);
+    useState<ShoppingListItemType[]>([]);
   const [value, setValue] = useState("");
 
   const handleSubmit = () => {
@@ -32,20 +25,28 @@ export default function App() {
   };
 
   return (
-    <View style={styles.container}>
-      <TextInput 
-      placeholder="E.g. Coffee" 
-      style={styles.textInput} 
-      value={value}
-      onChangeText = {setValue}
-      returnKeyType="done"
-      onSubmitEditing={handleSubmit}
+    <FlatList 
+      data={shoppingList}
+      style={styles.container} 
+      contentContainerStyle={styles.contentContainer}
+      stickyHeaderIndices={[0]}
+      ListEmptyComponent={
+        <View style={styles.listEmptyContainer}>
+          <Text>Your shopping list is empty</Text>
+        </View>
+      }
+      ListHeaderComponent={ 
+        <TextInput 
+        placeholder="E.g. Coffee" 
+        style={styles.textInput} 
+        value={value}
+        onChangeText = {setValue}
+        returnKeyType="done"
+        onSubmitEditing={handleSubmit}
+        />
+      }
+      renderItem={({ item }) => <ShoppingListItem name={item.name} />} 
       />
-      {shoppingList.map((item) => (
-        <ShoppingListItem name={item.name} key={item.id} />
-      ))}
-     
-    </View>
   );
 }
 
@@ -53,7 +54,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#fff",
-    paddingTop: 12,
+    padding: 12,
+  },
+  contentContainer: {
+    paddingBottom: 24,
   },
   textInput: {
     borderColor: theme.colorLightGrey,
@@ -63,5 +67,11 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     fontSize: 18,
     borderRadius: 50,
+    backgroundColor: theme.colorWhite,
   },
+  listEmptyContainer: {
+    justifyContent: "center",
+    alignItems: "center",
+    marginVertical: 18,
+  }
 });
