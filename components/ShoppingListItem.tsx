@@ -3,11 +3,14 @@ import {
     Text, 
     StyleSheet, 
     Alert, 
-    Pressable
+    View,
+    Pressable,
+    TextInput
         } 
         from "react-native";
 import { theme } from "../theme";
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import AntDesign from '@expo/vector-icons/AntDesign';
 
 type Props = {
   name: string;
@@ -43,13 +46,22 @@ export default function ShoppingListItem({ name, isCompleted, onDelete, onToggle
         ]}
         onPress={onToggleComplete}
         >
-        <Text style={[
+        <View style={styles.row}>
+        <AntDesign 
+          name="checksquareo" 
+          size={24} 
+          color={isCompleted ? theme.colorGrey : theme.colorCerulean} />
+        <Text 
+          numberOfLines={1}
+          style={[
                 styles.itemText, 
                 isCompleted ? styles.completedText: undefined,
               ]}
               >
           {name} 
         </Text>
+        </View>
+          
         <TouchableOpacity  
         onPress={handleDelete} 
         activeOpacity={0.8}
@@ -66,10 +78,10 @@ export default function ShoppingListItem({ name, isCompleted, onDelete, onToggle
 
 
 const styles = StyleSheet.create({
-
+ 
     itemContainer: {
       borderBottomWidth: 1, 
-      borderBottomColor: theme.colorLightGrey, 
+      borderBottomColor: theme.colorCerulean, 
       paddingHorizontal: 18, 
       paddingVertical: 16, 
       flexDirection: "row",
@@ -83,12 +95,17 @@ const styles = StyleSheet.create({
 
     itemText: {
       fontSize: 18, 
-      fontWeight: "200"
+      fontWeight: "200",
+      flex: 1,
     },
     completedText: {
       textDecorationLine: "line-through",
       textDecorationColor: theme.colorGrey,
       color: theme.colorGrey,
     },
-   
+    row: {
+      flexDirection: "row",
+      gap: 8,
+      flex:1,
+    },
   });
