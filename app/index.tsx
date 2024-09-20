@@ -1,7 +1,10 @@
 import ShoppingListItem from "../components/ShoppingListItem";
 import { StyleSheet, TextInput, FlatList, View, Text } from "react-native";
 import { theme } from "../theme";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { getFromStorage, saveToStorage } from "../utils/storage";
+
+const storageKey = "shopping-list";
 
 type ShoppingListItemType = {
   id: string;
@@ -15,6 +18,16 @@ export default function App() {
     useState<ShoppingListItemType[]>([]);
   const [value, setValue] = useState("");
 
+  useEffect(() => {
+    const fetchInitial = async () => {
+      const data = await getFromStorage(storageKey);
+      if (data) {
+        setShoppingList(data);  
+      }
+    };
+    fetchInitial();
+  }, []);
+
   const handleSubmit = () => {
     if (value) {
       const newShoppingList = [
@@ -25,12 +38,14 @@ export default function App() {
         ...shoppingList,
       ];
       setShoppingList(newShoppingList);
+      saveToStorage(storageKey, newShoppingList);
       setValue("");
     }
   };
 
   const handleDelete = (id: string) => {
     const newShoppingList = shoppingList.filter(item => item.id !== id);
+    saveToStorage(storageKey, shoppingList);
     setShoppingList(newShoppingList);
   };
 
@@ -47,8 +62,9 @@ export default function App() {
       }
       return item;
     });
+    saveToStorage(storageKey, newShoppingList);
     setShoppingList(newShoppingList);
-  }
+  };
 
   return (
     <FlatList 
@@ -86,20 +102,20 @@ export default function App() {
 
    function orderShoppingList(shoppingList: ShoppingListItemType[]) {
     return shoppingList.sort((item1, item2) => {
-      if (item1.completedAtTimestamp && item2.completedAtTimestamp) {
-        return item2.completedAtTimestamp - item1.completedAtTimestamp;
+      if (item1.completedAtTimeStamp && item2.completedAtTimeStamp) {
+        return item2.completedAtTimeStamp - item1.completedAtTimeStamp;
       }
   
-      if (item1.completedAtTimestamp && !item2.completedAtTimestamp) {
+      if (item1.completedAtTimeStamp && !item2.completedAtTimeStamp) {
         return 1;
       }
   
-      if (!item1.completedAtTimestamp && item2.completedAtTimestamp) {
+      if (!item1.completedAtTimeStamp && item2.completedAtTimeStamp) {
         return -1;
       }
   
-      if (!item1.completedAtTimestamp && !item2.completedAtTimestamp) {
-        return item2.lastUpdatedTimestamp - item1.lastUpdatedTimestamp;
+      if (!item1.completedAtTimeStamp && !item2.completedAtTimeStamp) {
+        return item2.lastUpdatedTimeStamp - item1.lastUpdatedTimeStamp;
       }
   
       return 0;
