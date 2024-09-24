@@ -4,15 +4,37 @@ import { theme } from "../../theme";
 import { registerForPushNotificationsAsync } from "../../utils/registerForPushNotificationsAsync";
 import * as Notifications from "expo-notifications";
 import * as Device from "expo-device";
+import { Duration, isBefore, intervalToDuration } from "date-fns";
 
+// 10 seconds from now 
+const timestamp = Date.now() + 10 * 1000;
 
+type CountdownStatus = {
+  isOverdue: boolean;
+  distance: Duration;
+}
 
 export default function CounterScreen() {
-  const [secondsElapsed, setSecondsElapsed] = useState(0);
+  const [status, setStatus] = useState<CountdownStatus>({
+    isOverdue: false,
+    distance: {},
+  });
+
+  console.log(status);
+
 
   useEffect(() => {
     const intervalId = setInterval(() => {
-      setSecondsElapsed(val => val + 1);
+      const isOverdue = isBefore(timestamp, Date.now());
+      const distance = intervalToDuration(
+            isOverdue 
+                ? { start: timestamp, end: Date.now()} 
+                : {
+                   start: Date.now(),
+                   end: timestamp,
+            },
+      );
+      setStatus({ isOverdue, distance });
     }, 1000);
 
     return () => {
@@ -43,7 +65,6 @@ export default function CounterScreen() {
 
   return (
     <View style={styles.container}>
-      <Text>{secondsElapsed}</Text>
       <TouchableOpacity 
         style={styles.button} 
         activeOpacity={0.8} 
