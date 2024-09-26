@@ -6,9 +6,17 @@ import * as Notifications from "expo-notifications";
 import * as Device from "expo-device";
 import { Duration, isBefore, intervalToDuration } from "date-fns";
 import {TimeSegment} from "../../components/TimeSegment";
+import { getFromStorage, saveToStorage } from "../../utils/storage";
 
 // 10 seconds from now 
-const timestamp = Date.now() + 10 * 1000;
+const frequency = 10 * 1000;
+
+const countdownStorageKey = "taskly-countdown";
+
+type PersistedCountdownState = {
+  currentNotificationId: string | undefined;
+  completedAtTimestamps: number[];
+};
 
 type CountdownStatus = {
   isOverdue: boolean;
@@ -16,16 +24,30 @@ type CountdownStatus = {
 }
 
 export default function CounterScreen() {
+  const [countdownState, setCountdownState] = useState<PersistedCountdownState>();
   const [status, setStatus] = useState<CountdownStatus>({
     isOverdue: false,
     distance: {},
   });
 
-  console.log(status);
+  console.log(countdownState);
+
+  const lastCompletedTimestamp = countdownState?.completedAtTimestamps[0];
+
+  useEffect(() => {
+    const init = async () => {
+      const value = await getFromStorage(countdownStorageKey);
+      setCountdownState(value);
+    };
+    init();
+  }, []);
+
+ 
 
 
   useEffect(() => {
     const intervalId = setInterval(() => {
+      const timestamp = lastCompletedTimestamp ? lastCompletedTimestamp + frequency : Date.now();
       const isOverdue = isBefore(timestamp, Date.now());
       const distance = intervalToDuration(
             isOverdue 
@@ -41,27 +63,42 @@ export default function CounterScreen() {
     return () => {
       clearInterval(intervalId);
     };
-  }, []);
+  }, [lastCompletedTimestamp]);
 
   const scheduleNotification = async () => {
+    let pushNotificationId;
     const result = await registerForPushNotificationsAsync();
     if (result === "granted") {
-      await Notifications.scheduleNotificationAsync({
+      pushNotificationId = await Notifications.scheduleNotificationAsync({
         content: {
-          title: "I'm a notification from your app 📬",
+          title: "The thing is due...",
         },
         trigger: {
-          seconds: 5,
+          seconds: frequency / 1000,
         }
       })
     } else { 
-      if(Device.isDevice) {
+      if (Device.isDevice) {
       Alert.alert(
         "Unable to schedule notification",
         "Enable the notification permission for Expo Go in settings",
       );
      }
     }
+    if (countdownState?.currentNotificationId) {
+      await Notifications.cancelScheduledNotificationAsync(
+        countdownState?.currentNotificationId,
+      );
+    }
+
+    const newCountdownState: PersistedCountdownState = {
+      currentNotificationId: pushNotificationId,
+      completedAtTimestamps: countdownState
+       ? [Date.now(), ...countdownState.completedAtTimestamps]
+       : [Date.now()],
+    };
+    setCountdownState(newCountdownState);
+    await saveToStorage(countdownStorageKey, newCountdownState);
   };
 
   return (
