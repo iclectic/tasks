@@ -1,10 +1,10 @@
-import { Text, View, StyleSheet, TouchableOpacity, Alert} from "react-native";
+import { Text, View, StyleSheet, TouchableOpacity, Alert, ActivityIndicator} from "react-native";
 import {useState, useEffect} from "react";
 import { theme } from "../../theme";
 import { registerForPushNotificationsAsync } from "../../utils/registerForPushNotificationsAsync";
 import * as Notifications from "expo-notifications";
 import * as Device from "expo-device";
-import { Duration, isBefore, intervalToDuration } from "date-fns";
+import { Duration, isBefore, intervalToDuration, set } from "date-fns";
 import {TimeSegment} from "../../components/TimeSegment";
 import { getFromStorage, saveToStorage } from "../../utils/storage";
 
@@ -24,13 +24,14 @@ type CountdownStatus = {
 }
 
 export default function CounterScreen() {
-  const [countdownState, setCountdownState] = useState<PersistedCountdownState>();
+  const [isLoading, setIsLoading] = useState(true);
+  const [countdownState, setCountdownState] = 
+    useState<PersistedCountdownState>();
   const [status, setStatus] = useState<CountdownStatus>({
     isOverdue: false,
     distance: {},
   });
 
-  console.log(countdownState);
 
   const lastCompletedTimestamp = countdownState?.completedAtTimestamps[0];
 
@@ -43,11 +44,14 @@ export default function CounterScreen() {
   }, []);
 
  
-
-
   useEffect(() => {
     const intervalId = setInterval(() => {
-      const timestamp = lastCompletedTimestamp ? lastCompletedTimestamp + frequency : Date.now();
+      const timestamp = lastCompletedTimestamp 
+        ? lastCompletedTimestamp + frequency 
+        : Date.now();
+      if (lastCompletedTimestamp) {
+        setIsLoading(false);
+      }
       const isOverdue = isBefore(timestamp, Date.now());
       const distance = intervalToDuration(
             isOverdue 
@@ -100,6 +104,14 @@ export default function CounterScreen() {
     setCountdownState(newCountdownState);
     await saveToStorage(countdownStorageKey, newCountdownState);
   };
+
+  if (isLoading) {
+    return (
+      <View style={styles.activityIndicatorContainer}>
+        <ActivityIndicator />
+      </View>
+    )
+  }
 
   return (
     <View 
@@ -179,5 +191,11 @@ const styles = StyleSheet.create({
   },
   whiteText: {
     color: theme.colorWhite,
+  },
+  activityIndicatorContainer: {
+    backgroundColor: theme.colorWhite,
+    justifyContent: "center",
+    alignItems: "center",
+    flex: 1,
   },
 });
